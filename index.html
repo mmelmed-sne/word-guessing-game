@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Libre+Franklin:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="mast">
+  <div class="mrow">
+    <div><h1 class="logo">Gist<span>.</span></h1><p class="meta" id="meta"></p></div>
+    <nav class="nav"><button class="tb" id="bHelp" type="button">How to play</button><button class="tb" id="bStats" type="button">Stats</button><button class="tb" id="bPractice" type="button">Practice</button></nav>
+  </div>
+</header>
+<main>
+  <section aria-label="Score and guesses">
+    <div class="score"><div class="pts" id="pts">100</div><div class="ptsl"><b>points left</b>Keep as many as you can</div></div>
+    <div class="meter" aria-hidden="true"><div class="fill" id="fill"></div><div class="prev" id="prev"></div></div>
+    <div class="ticks" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
+    <div id="play">
+      <form id="gf" autocomplete="off"><label class="sr" for="g">Your guess</label><input id="g" name="g" type="text" placeholder="Type any word" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go" maxlength="24"><button class="go" type="submit">Guess</button></form>
+      <p class="hint-cost">A wrong guess costs 5 points. Typos and made-up words are free.</p>
+      <p class="msg" id="msg" aria-live="polite"></p>
+    </div>
+    <div class="result" id="result" hidden></div>
+    <div class="tries"><h2>Your guesses</h2><ul class="tlist" id="tlist"></ul><p class="empty" id="tempty">None yet. Your first guess is a shot in the dark, or buy a hint first.</p></div>
+    <button class="giveup" id="giveup" type="button">Give up and reveal the word</button>
+  </section>
+  <section class="board" aria-label="Hints">
+    <h2 id="bh">Hints: buy any, any time</h2>
+    <div class="cards" id="cards"></div>
+    <p class="note" id="note"></p>
+  </section>
+</main>
+<div class="ov" id="ov" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><button class="x" type="button" aria-label="Close">&times;</button><div id="mbody"></div></div></div>
+<script>
+{
+const W=[
+["dinosaur","From Greek words meaning “terrible” + “lizard.”","prehistoric reptile","Any of a group of reptiles, some enormous, that ruled the land for millions of years before dying out."],
+["companion","From Latin words meaning “with” + “bread,” as in someone you share meals with.","comrade","A person you spend time with or travel alongside."],
+["tsunami","From Japanese words meaning “harbor” + “wave.”","tidal wave","A series of huge, fast-moving sea waves, usually set off by an undersea earthquake."],
+["muscle","From a Latin word meaning “little mouse.”","brawn","Body tissue that tightens and relaxes to make parts of you move."],
+["astronaut","From Greek words meaning “star” + “sailor.”","cosmonaut","A person trained to travel and work in space."],
+["disaster","From Italian words meaning “bad” + “star.”","catastrophe","A sudden event that causes great damage, loss, or suffering."],
+["cookie","From a Dutch word meaning “little cake.”","biscuit","A small, sweet baked treat, often round and sometimes studded with chocolate chips."],
+["helicopter","From Greek words meaning “spiral” + “wing.”","chopper","An aircraft lifted by spinning overhead blades, able to hover and rise straight up."],
+["salary","From a Latin word related to “salt.”","wage","A fixed amount of money paid to an employee on a regular schedule."],
+["karaoke","From Japanese words meaning “empty” + “orchestra.”","sing-along","Entertainment where people sing popular songs over recorded music, reading the lyrics off a screen."],
+["planet","From a Greek word meaning “wanderer.”","world","A large round body in space that travels around a star."],
+["quarantine","From Italian words meaning “forty days.”","isolation","A period of keeping people or animals apart to stop a disease from spreading."],
+["robot","From a Czech word meaning “forced labor.”","android","A machine that can carry out tasks on its own, sometimes built to look like a person."],
+["kindergarten","From German words meaning “children” + “garden.”","preschool","A class for young children, usually the year before first grade."],
+["galaxy","From a Greek word meaning “milk.”","star system","A vast collection of stars, gas, and dust held together by gravity."],
+["shampoo","From a Hindi word meaning “to press” or “to massage.”","hair wash","A liquid soap made for washing hair."],
+["democracy","From Greek words meaning “people” + “rule.”","self-government","A system of government in which citizens choose their leaders by voting."],
+["clue","From an old English word for a ball of thread.","hint","A piece of information that helps you solve a puzzle or mystery."],
+["algebra","From an Arabic word meaning “putting broken parts back together.”","equations","The branch of math that uses letters and symbols to stand for unknown numbers."],
+["cereal","Named after the Roman goddess of the harvest.","granola","A breakfast food made from grain, usually eaten from a bowl with milk."],
+["jungle","From a Hindi word for wild, uncultivated land.","rainforest","A thick, tangled tropical forest full of trees, vines, and wildlife."],
+["thermometer","From Greek words meaning “heat” + “measure.”","temperature gauge","A device that tells you how hot or cold something is."],
+["yacht","From a Dutch word meaning “hunting ship.”","sailboat","A boat used for racing or pleasure cruising, often sleek and expensive."],
+["trivia","From Latin words meaning “three” + “roads,” the kind of crossroads where people stopped to chat.","tidbits","Small, unimportant facts, often used in quiz games."],
+["sofa","From an Arabic word for a raised bench covered with cushions.","couch","A long padded seat with a back and arms, big enough for two or more people."],
+["panic","Named after a Greek god of the wild who was said to cause sudden fear.","terror","A sudden fear so strong it stops you from thinking clearly."],
+["safari","From a Swahili word meaning “journey.”","expedition","A trip to watch or photograph wild animals in their natural habitat, especially in Africa."],
+["candidate","From a Latin word meaning “dressed in white.”","nominee","A person who is running for office or applying for a job."],
+["microscope","From Greek words meaning “small” + “to look.”","magnifier","An instrument that makes tiny things, like cells, look much bigger."],
+["tycoon","From a Japanese title meaning “great lord.”","magnate","A wealthy, powerful person in business."],
+["calculate","From a Latin word meaning “small pebble,” once used for counting.","compute","To work out an amount or answer using math."],
+["mortgage","From Old French words meaning “death” + “pledge.”","home loan","A loan used to buy a house, paid back over many years."],
+["hurricane","From a Taíno (Caribbean) word for a great storm.","typhoon","A powerful tropical storm with violent winds and heavy rain."],
+["magazine","From an Arabic word meaning “storehouses.”","periodical","A publication with articles and photos that comes out weekly or monthly."],
+["bungalow","From a Hindi word meaning “in the style of Bengal.”","cottage","A small, single-story house, often with a porch."],
+["emoji","From Japanese words meaning “picture” + “character.”","smiley","A small digital picture, like a face or a heart, used in texts and messages."],
+["photograph","From Greek words meaning “light” + “drawing.”","snapshot","A picture taken with a camera."],
+["guru","From a Sanskrit word meaning “heavy” or “venerable.”","mentor","A trusted teacher or expert who guides others."],
+["alphabet","From the names of the first two Greek letters.","ABCs","The set of letters used to write a language, in their fixed order."],
+["breakfast","From English words meaning “to end” + “a time without eating.”","morning meal","The first meal of the day."],
+["sandwich","Named after an 18th-century English earl.","sub","Fillings like meat or cheese placed between two slices of bread."],
+["boss","From a Dutch word meaning “master.”","manager","The person in charge of a group of workers."],
+["husband","From Old Norse words meaning “house” + “master.”","spouse","A man, in relation to the person he is married to."],
+["broadcast","Originally a farming word for scattering seed widely by hand.","transmission","A program sent out over radio, TV, or the internet."],
+["jumbo","Named after a famous circus elephant.","giant","Much larger than the usual size."]
+];
+const H=[
+{k:"root",name:"Root meaning",desc:"What its root words meant",cost:5,e:"\u{1F331}"},
+{k:"len",name:"Letter count",desc:"How many letters it has",cost:10,e:"\u{1F522}"},
+{k:"first",name:"First letter",desc:"The letter it starts with",cost:15,e:"\u{1F524}"},
+{k:"sim",name:"Similar word",desc:"A word with a close meaning",cost:20,e:"\u{1F501}"},
+{k:"def",name:"Definition",desc:"What it means",cost:25,e:"\u{1F4D6}"}
+];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store={get(k,f){try{const v=localStorage.getItem(k);return v==null?f:JSON.parse(v)}catch(e){return f}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const START=new Date(2026,10,23);
+const dayNum=()=>{const d=new Date(),a=new Date(d.getFullYear(),d.getMonth(),d.getDate());return Math.max(1,Math.round((a-START)/864e5)+1)};
+const idxFor=n=>(n-1)%W.length;
+const blankStats={played:0,won:0,streak:0,best:0,total:0,last:0};
+let S=null,dict=null,msg="",tone="",giveArm=false;
+const fresh=(mode,num,idx)=>({mode,num,idx,pts:100,hints:[],wrong:[],log:[],done:false,won:false,gave:false,rec:false});
+const word=()=>W[S.idx];
+const value=k=>{const [a,root,sim,def]=word();return k==="root"?root:k==="len"?`${a.length} letters`:k==="first"?a[0].toUpperCase():k==="sim"?sim:def};
+const score=()=>S.done&&!S.won?0:S.pts;
+function loadToday(){const n=dayNum(),saved=store.get("gist:day:"+n,null);S=saved&&saved.idx===idxFor(n)?saved:fresh("daily",n,idxFor(n));msg=""}
+function startPractice(){const t=idxFor(dayNum());let i=t;while(i===t&&W.length>1)i=Math.floor(Math.random()*W.length);S=fresh("practice",0,i);msg="";render();$("#g").focus()}
+function persist(){if(S.mode==="daily")store.set("gist:day:"+S.num,S)}
+function say(t,c){msg=t;tone=c||"";const m=$("#msg");m.textContent=t;m.className="msg"+(tone?" "+tone:"")}
+function finish(won){
+  S.done=true;S.won=won;
+  if(S.mode==="daily"&&!S.rec){
+    S.rec=true;const st=Object.assign({},blankStats,store.get("gist:stats",{}));
+    st.played++;st.total+=won?S.pts:0;
+    if(won){st.won++;st.streak=st.last===S.num-1?st.streak+1:1;st.best=Math.max(st.best,st.streak)}else st.streak=0;
+    st.last=S.num;store.set("gist:stats",st);
+  }
+  persist();render();
+}
+function buy(k){
+  if(S.done||S.hints.includes(k))return;
+  const h=H.find(x=>x.k===k);
+  if(S.pts-h.cost<5){say(`You need ${h.cost+5} points for this hint, so you still have 5 left for a guess.`,"bad");return}
+  S.pts-=h.cost;S.hints.push(k);S.log.push(h.e);msg="";persist();render();
+}
+function guess(raw){
+  if(S.done)return;
+  const w=raw.trim().toLowerCase(),ans=word()[0];
+  if(!w){say("Type a word first.","bad");return}
+  if(!/^[a-z]+$/.test(w)){say("Use letters only.","bad");return}
+  if(w===ans){$("#g").value="";S.log.push("✅");finish(true);return}
+  if(S.wrong.includes(w)){say(`You already tried ${w.toUpperCase()}. No points lost.`,"bad");return}
+  if(dict&&!dict.has(w)){say(`${w.toUpperCase()} isn't in the word list. No points lost.`,"bad");return}
+  $("#g").value="";S.pts-=5;S.wrong.push(w);S.log.push("❌");
+  if(S.pts<=0){S.pts=0;finish(false);return}
+  persist();render();say(`Not ${w.toUpperCase()}. That cost 5 points.`,"bad");
+}
+function renderHead(){
+  const ds=new Date().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+  $("#meta").textContent=S.mode==="daily"?`No. ${S.num} · ${ds}`:"Practice word · doesn't count toward stats";
+  $("#bPractice").textContent=S.mode==="daily"?"Practice":"Today's word";
+}
+function renderScore(){
+  const p=score();$("#pts").textContent=p;$("#fill").style.width=p+"%";$("#prev").style.width="0";
+  $("#pts").setAttribute("aria-label",p+" points left");
+}
+function renderCards(){
+  $("#bh").textContent=S.done?"Every hint for this word":"Hints: buy any, any time";
+  $("#cards").innerHTML=H.map(h=>{
+    const open=S.hints.includes(h.k),shown=open||S.done;
+    const cls=open?" open":S.done?" unused":"";
+    const cost=open?`−${h.cost} spent`:S.done?"Not used":`${h.cost} pts`;
+    return `<button class="card${cls}" type="button" data-k="${h.k}"${shown?' aria-disabled="true"':""} aria-label="${esc(h.name)}${shown?": "+esc(value(h.k)):", costs "+h.cost+" points"}"><span class="cname">${esc(h.name)}</span><span class="cost">${cost}</span>${shown?`<span class="cval">${esc(value(h.k))}</span>`:`<span class="cdesc">${esc(h.desc)}</span>`}</button>`;
+  }).join("");
+}
+function renderTries(){
+  $("#tlist").innerHTML=S.wrong.map(w=>`<li><s>${esc(w)}</s><span>−5</span></li>`).join("");
+  $("#tempty").hidden=S.wrong.length>0||S.done;
+  $("#tempty").textContent="None yet. Your first guess is a shot in the dark, or buy a hint first.";
+}
+function renderPlay(){
+  $("#play").hidden=S.done;
+  const gu=$("#giveup");giveArm=false;gu.textContent="Give up and reveal the word";gu.hidden=S.done;
+  const r=$("#result");r.hidden=!S.done;
+  if(!S.done){r.innerHTML="";const m=$("#msg");m.textContent=msg;m.className="msg"+(msg&&tone?" "+tone:"");return}
+  const ans=word()[0],lab=S.won?"Solved":S.gave?"You gave up":"Out of points";
+  const line=S.won?`You kept <b>${S.pts}</b> of 100 points with ${S.hints.length} hint${S.hints.length===1?"":"s"} and ${S.wrong.length} wrong guess${S.wrong.length===1?"":"es"}.`:"Score: 0. Every hint is open on the board so you can see how close you were.";
+  r.innerHTML=`<p class="rlab">${lab}</p><p class="rword">${esc(ans)}</p><p>${line}</p>
+  <div class="btns"><button class="btn" id="share" type="button">Copy result</button><button class="btn ghost" id="more" type="button">${S.mode==="daily"?"Play a practice word":"Another practice word"}</button></div>
+  ${S.mode==="daily"?`<p class="next">Next word in <b id="cd"></b></p>`:`<button class="giveup" id="backToday" type="button">Back to today's word</button>`}
+  <textarea class="sharebox" id="sharebox" readonly hidden aria-label="Result to copy"></textarea>`;
+  tick();
+}
+function render(){renderHead();renderScore();renderCards();renderTries();renderPlay()}
+const shareText=()=>`Gist ${S.mode==="daily"?"#"+S.num:"practice"} · ${score()}/100\n${S.log.join("")}${S.won||S.gave?"":"⬛"}`;
+async function copyShare(){
+  const txt=shareText(),btn=$("#share");
+  try{await navigator.clipboard.writeText(txt);btn.textContent="Copied"}
+  catch(e){const box=$("#sharebox");box.hidden=false;box.value=txt;box.focus();box.select();let ok=false;try{ok=document.execCommand("copy")}catch(_){}btn.textContent=ok?"Copied":"Copy the text below"}
+}
+function tick(){
+  if(S&&S.mode==="daily"&&dayNum()!==S.num){loadToday();render();return}
+  const el=$("#cd");if(!el)return;
+  const n=new Date(),m=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1),s=Math.max(0,Math.floor((m-n)/1000));
+  el.textContent=`${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+}
+const HELP=`<h2 id="mt">How to play</h2>
+<p>Guess today's word. You start with 100 points and keep whatever is left when you solve it.</p>
+<ul><li>Guess any word, any time. A wrong guess costs 5 points. Typos and made-up words are free.</li>
+<li>Buy hints whenever you like, even before your first guess. Stronger hints cost more:</li></ul>
+<table class="ptable"><tbody>${H.map(h=>`<tr><td>${h.name}</td><td>${h.cost} pts</td></tr>`).join("")}</tbody></table>
+<ul><li>Hit 0 points and the word is revealed. A new word arrives every midnight.</li></ul>
+<p class="small">Guesses are checked against the SCOWL word list, copyright Kevin Atkinson and contributors, used under its free license.</p>
+<button class="btn" id="mgo" type="button">Play today's word</button>`;
+function statsHTML(){
+  const st=Object.assign({},blankStats,store.get("gist:stats",{}));
+  const pct=st.played?Math.round(st.won/st.played*100):0,avg=st.played?Math.round(st.total/st.played):"–";
+  return `<h2 id="mt">Your record</h2><div class="stats"><div><b>${st.played}</b><span>Played</span></div><div><b>${pct}%</b><span>Solved</span></div><div><b>${st.streak}</b><span>Streak (best ${st.best})</span></div><div><b>${avg}</b><span>Average score</span></div></div><p class="small">Daily words only; practice doesn't count. Saved in this browser.</p>`;
+}
+let lastFocus=null;
+function openModal(kind){lastFocus=document.activeElement;$("#mbody").innerHTML=kind==="help"?HELP:statsHTML();$("#ov").hidden=false;$("#ov .x").focus()}
+function closeModal(){$("#ov").hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+function preview(k){const h=H.find(x=>x.k===k),p=$("#prev");if(!h||S.done||S.hints.includes(k)){p.style.width="0";return}const c=Math.min(h.cost,S.pts);p.style.left=(S.pts-c)+"%";p.style.width=c+"%"}
+function bind(){
+  $("#gf").addEventListener("submit",e=>{e.preventDefault();guess($("#g").value);$("#g").focus()});
+  $("#g").addEventListener("input",()=>{if(msg&&tone==="bad")say("")});
+  const cards=$("#cards");
+  cards.addEventListener("click",e=>{const b=e.target.closest(".card");if(b)buy(b.dataset.k)});
+  cards.addEventListener("mouseover",e=>{const b=e.target.closest(".card");preview(b?b.dataset.k:null)});
+  cards.addEventListener("mouseleave",()=>preview(null));
+  cards.addEventListener("focusin",e=>{const b=e.target.closest(".card");preview(b?b.dataset.k:null)});
+  cards.addEventListener("focusout",()=>preview(null));
+  $("#giveup").addEventListener("click",()=>{if(!giveArm){giveArm=true;$("#giveup").textContent="Sure? Tap again to reveal the word";return}S.gave=true;S.log.push("\u{1F3F3}");finish(false)});
+  $("#result").addEventListener("click",e=>{const id=e.target.closest("button")?.id;if(id==="share")copyShare();else if(id==="more")startPractice();else if(id==="backToday"){loadToday();render()}});
+  $("#bHelp").addEventListener("click",()=>openModal("help"));
+  $("#bStats").addEventListener("click",()=>openModal("stats"));
+  $("#bPractice").addEventListener("click",()=>{if(S.mode==="daily")startPractice();else{loadToday();render()}});
+  $("#ov").addEventListener("click",e=>{if(e.target.id==="ov"||e.target.closest(".x")||e.target.closest("#mgo"))closeModal()});
+  document.addEventListener("keydown",e=>{if(!$("#ov").hidden&&e.key==="Escape")closeModal()});
+  setInterval(tick,1000);
+}
+function loadWords(){
+  fetch("words.csv").then(r=>r.ok?r.text():Promise.reject(r.status)).then(t=>{const s=new Set(t.split("\n").slice(1).map(x=>x.trim()).filter(Boolean));W.forEach(w=>s.add(w[0]));if(s.size>1000)dict=s}).catch(()=>{dict=null});
+}
+function start(d){
+  if(d&&d.S&&W[d.S.idx]){S=d.S}else loadToday();
+  $("#note").textContent=`Prototype: ${W.length} hand-written words rotate daily. Progress saves in this browser.`;
+  bind();loadWords();render();
+  if(!store.get("gist:seen",false)){store.set("gist:seen",true);openModal("help")}
+}
+window.claude?.hot?.snapshot?.(()=>({S}));
+window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
+}
+</script>
+</body>
+</html>

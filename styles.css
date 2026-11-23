@@ -1,0 +1,185 @@
+/* VOICE everyday daily puzzle, calm and confident
+   IDEA a newspaper puzzle page: serif masthead, one clean board, the score kept in the margin
+   PICTURE the hint board, five priced cards that turn solid teal when bought, beside a draining points meter
+   COLOUR pure white ground, near-black ink, deep teal for bought hints, brick red for lost points; night: ink ground, mint teal
+   TYPE Fraunces for masthead, score, answers and revealed hints + Libre Franklin for every control
+   LAYOUT laptop: score, guess and tries on the left, the hint board on the right; phone: score, guess, hints, tries */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121211);--ink:light-dark(#121211,#f2f1ec);--soft:light-dark(#5f5e58,#a9a79f);--line:light-dark(#e3e1d9,#2f2e2b);--tile:light-dark(#f5f4ef,#1c1c1a);--tileh:light-dark(#ecebe4,#252523);--acc:light-dark(#0b6b52,#5fd0a8);--on:light-dark(#ffffff,#08281f);--accsoft:light-dark(#e3f3ec,#163a2f);--red:light-dark(#b42318,#ff8b7b);--hatch:light-dark(rgba(180,35,24,.55),rgba(255,139,123,.6))}
+:root[data-theme=light]{color-scheme:light}
+:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 "Libre Franklin","Helvetica Neue",Arial,sans-serif;overflow-x:clip}
+button,input{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.mast{max-width:1240px;margin:0 auto;padding:18px max(4vw,16px) 0}
+.mrow{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px;padding-bottom:12px;border-bottom:3px double var(--ink)}
+.logo{margin:0;font:650 clamp(40px,6vw,56px)/1 Fraunces,Georgia,serif;letter-spacing:-.03em}
+.logo span{color:var(--acc)}
+.meta{margin:6px 0 0;color:var(--soft);font-size:15px}
+.nav{display:flex;flex-wrap:wrap;gap:8px}
+.tb{min-height:44px;padding:0 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--bg);font-weight:600;font-size:15px;cursor:pointer}
+main{max-width:1240px;margin:0 auto;padding:clamp(22px,3vw,40px) max(4vw,16px) 32px;display:grid;gap:clamp(24px,4vw,56px);grid-template-columns:minmax(0,1fr)}
+.score{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.pts{font:600 clamp(64px,9vw,96px)/.9 Fraunces,Georgia,serif;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.ptsl{padding-bottom:8px;color:var(--soft);font-size:15px}
+.ptsl b{display:block;color:var(--ink);font-size:17px}
+.meter{position:relative;height:12px;margin:16px 0 6px;border-radius:6px;background:var(--tile);overflow:hidden}
+.fill{position:absolute;inset:0 auto 0 0;background:var(--ink);border-radius:6px;transition:width .45s ease}
+.prev{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(-45deg,var(--hatch) 0 4px,transparent 4px 8px);transition:width .2s}
+.ticks{display:flex;justify-content:space-between;font-size:13px;color:var(--soft)}
+form{display:flex;gap:8px;margin-top:26px}
+#g{flex:1;min-height:52px;padding:0 16px;border:1.5px solid var(--ink);border-radius:10px;background:var(--bg);font-size:18px;outline:0}
+#g:focus-visible{box-shadow:0 0 0 3px var(--accsoft);border-color:var(--acc)}
+.go{min-height:52px;padding:0 22px;border:0;border-radius:10px;background:var(--ink);color:var(--bg);font-weight:700;font-size:17px;cursor:pointer}
+.hint-cost{margin:8px 0 0;font-size:14px;color:var(--soft)}
+.msg{min-height:28px;margin:14px 0 0;font-weight:600;font-size:17px}
+.msg.bad{color:var(--red)}
+.msg.ok{color:var(--acc)}
+.tries{margin-top:18px}
+.tries h2,.board h2{margin:0 0 10px;font:600 15px "Libre Franklin",Arial,sans-serif;color:var(--soft)}
+.tlist{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.tlist li{display:flex;gap:8px;align-items:baseline;padding:6px 12px;border-radius:999px;background:var(--tile);font-weight:600}
+.tlist li s{text-decoration-color:var(--red);text-decoration-thickness:2px}
+.tlist li span{color:var(--red);font-size:13px;white-space:nowrap}
+.empty{color:var(--soft);font-size:15px;margin:0}
+.giveup{margin-top:14px;min-height:44px;padding:0;border:0;background:none;color:var(--soft);font-weight:600;font-size:15px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.cards{display:grid;gap:10px}
+.card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px 16px;width:100%;min-height:76px;padding:14px 18px;border:1.5px solid transparent;border-radius:12px;background:var(--tile);text-align:left;cursor:pointer;transition:background .15s}
+.cname{font-weight:700;font-size:17px}
+.cdesc{grid-column:1;font-size:14px;color:var(--soft)}
+.cost{grid-row:1/3;grid-column:2;padding:6px 12px;border-radius:999px;border:1.5px solid var(--ink);font-weight:700;font-size:14px;white-space:nowrap}
+.card.open{background:var(--acc);color:var(--on);cursor:default}
+.card.open .cdesc{display:none}
+.card.open .cost{border-color:currentColor;opacity:.85}
+.cval{grid-column:1/-1;font:500 clamp(19px,2vw,23px)/1.3 Fraunces,Georgia,serif;letter-spacing:-.01em;overflow-wrap:anywhere}
+.card.unused{background:var(--bg);border:1.5px dashed var(--line);cursor:default}
+.card.unused .cval{color:var(--soft)}
+.card.unused .cost{border-color:var(--line);color:var(--soft)}
+.tb:focus-visible,.go:focus-visible,.card:focus-visible,.giveup:focus-visible,.btn:focus-visible,.x:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.result{margin-top:4px;padding:22px clamp(18px,3vw,26px);border-radius:14px;border:1.5px solid var(--ink)}
+.result p{margin:0}
+.rlab{font-weight:700;color:var(--soft)}
+.rword{font:650 clamp(40px,6vw,58px)/1.02 Fraunces,Georgia,serif;letter-spacing:-.03em;margin:6px 0 10px!important;overflow-wrap:anywhere}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 12px!important}
+.btn{min-height:46px;padding:0 20px;border-radius:999px;border:1.5px solid var(--ink);background:var(--ink);color:var(--bg);font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink)}
+.next{color:var(--soft);font-size:15px}
+.next b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sharebox{width:100%;min-height:90px;margin-top:10px;padding:8px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);font:15px/1.5 "Libre Franklin",Arial,sans-serif}
+.note{margin:26px 0 0;font-size:13px;color:var(--soft)}
+.ov{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:16px;background:rgba(10,10,9,.55)}
+.modal{position:relative;width:100%;max-width:480px;max-height:calc(100% - 16px);overflow:auto;background:var(--bg);border-radius:16px;padding:28px clamp(18px,4vw,30px) 24px}
+.modal h2{margin:0 0 12px;font:650 34px/1.05 Fraunces,Georgia,serif;letter-spacing:-.02em}
+.modal ul{margin:0 0 14px;padding-left:1.2em}
+.modal li{margin-bottom:8px}
+.ptable{width:100%;border-collapse:collapse;margin:4px 0 16px;font-size:15px}
+.ptable td{padding:6px 0;border-bottom:1px solid var(--line)}
+.ptable td:last-child{text-align:right;font-weight:700;white-space:nowrap}
+.small{font-size:13px;color:var(--soft);margin:0 0 18px}
+.x{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;background:none;font-size:30px;line-height:1;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(6.5em,1fr));gap:12px;margin:0 0 16px}
+.stats div{border-top:2px solid var(--ink);padding-top:6px}
+.stats b{display:block;font:600 36px/1.05 Fraunces,Georgia,serif;font-variant-numeric:tabular-nums}
+.stats span{font-size:13px;color:var(--soft)}
+
+/* ==========================================================================
+   RESPONSIVE LAYOUTS
+   Everything above is the shared base. The blocks below set the format for
+   each kind of screen; sizes use clamp() so they scale smoothly in between.
+   ========================================================================== */
+
+/* Hover effects only on devices with a real pointer (mouse/trackpad),
+   so taps on phones don't leave cards stuck in a hover colour */
+@media(hover:hover){
+  .tb:hover{border-color:var(--ink)}
+  .card:not(.open):not(.unused):hover{background:var(--tileh)}
+  .go:hover,.btn:not(.ghost):hover{opacity:.88}
+}
+
+/* ---------- PHONES (up to 599px) ----------
+   Single column: score, guess, hints, tries. Compact header,
+   full-width buttons, modals slide up from the bottom like a sheet */
+@media(max-width:599px){
+  body{font-size:15px}
+  .mast{padding:max(12px,env(safe-area-inset-top)) 16px 0}
+  .mrow{flex-direction:column;align-items:stretch;gap:10px;padding-bottom:10px}
+  .logo{font-size:clamp(34px,11vw,44px)}
+  .meta{font-size:14px;margin-top:4px}
+  .nav{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tb{min-height:40px;padding:0 8px;font-size:13px}
+  main{padding:18px 16px max(28px,env(safe-area-inset-bottom));gap:26px}
+  .score{gap:10px}
+  .pts{font-size:clamp(56px,18vw,72px)}
+  .ptsl{font-size:14px;padding-bottom:6px}
+  .ptsl b{font-size:16px}
+  form{margin-top:18px}
+  #g{min-height:50px;font-size:17px}  /* 16px+ keeps iOS from zooming in */
+  .go{min-height:50px;padding:0 18px;font-size:16px}
+  .hint-cost{font-size:13px}
+  .msg{font-size:16px}
+  .cards{gap:8px}
+  .card{min-height:64px;padding:12px 14px;gap:4px 12px;border-radius:10px}
+  .cname{font-size:16px}
+  .cdesc,.cost{font-size:13px}
+  .cval{font-size:19px}
+  .result{padding:18px 16px}
+  .rword{font-size:clamp(34px,11vw,46px)}
+  .btns{display:grid;grid-template-columns:1fr 1fr}
+  .btn{width:100%;padding:0 12px}
+  .ov{place-items:end center;padding:0}
+  .modal{max-width:none;max-height:88vh;border-radius:18px 18px 0 0;padding:26px 18px max(22px,env(safe-area-inset-bottom))}
+  .modal h2{font-size:28px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .stats b{font-size:30px}
+}
+
+/* Very small phones (e.g. iPhone SE, 375px and below) */
+@media(max-width:380px){
+  .nav{grid-template-columns:1fr 1fr}
+  .nav .tb:last-child{grid-column:1/-1}
+  form{flex-direction:column}
+  .go{width:100%}
+  .btns{grid-template-columns:1fr}
+}
+
+/* ---------- TABLETS (600px to 899px) ----------
+   Still one column, but roomier, with hints laid out two per row */
+@media(min-width:600px) and (max-width:899px){
+  main{max-width:760px}
+  .mast{max-width:760px}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card{min-height:96px;align-content:start}
+}
+
+/* ---------- LAPTOPS & DESKTOPS (900px and up) ----------
+   Two columns: score, guess and tries on the left, hint board on the right.
+   The left column stays pinned while the hints scroll */
+@media(min-width:900px){
+  main{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);align-items:start}
+  main>section:first-child{position:sticky;top:24px}
+  .nav{gap:10px}
+  .modal{max-width:520px}
+}
+
+/* ---------- LARGE DESKTOPS (1400px and up) ----------
+   Wider page and slightly larger type so it doesn't look tiny on big monitors */
+@media(min-width:1400px){
+  body{font-size:17px}
+  .mast,main{max-width:1400px}
+  .pts{font-size:110px}
+  .card{min-height:84px;padding:16px 22px}
+  .cname{font-size:18px}
+  .cdesc,.cost{font-size:15px}
+  .cval{font-size:25px}
+  #g,.go{min-height:56px}
+  .modal{max-width:560px}
+}
+
+/* Short landscape screens (phone turned sideways): don't pin the column */
+@media(max-height:560px) and (orientation:landscape){
+  main>section:first-child{position:static}
+}
+
+@media(prefers-reduced-motion:reduce){.fill,.prev,.card{transition:none}}
