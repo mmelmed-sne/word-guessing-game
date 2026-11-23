@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gist</title>
+<title>Root</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500..700&family=Libre+Franklin:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
 <body>
 <header class="mast">
   <div class="mrow">
-    <div><h1 class="logo">Gist<span>.</span></h1><p class="meta" id="meta"></p></div>
+    <div><h1 class="logo">Root<span>.</span></h1><p class="meta" id="meta"></p></div>
     <nav class="nav"><button class="tb" id="bHelp" type="button">How to play</button><button class="tb" id="bStats" type="button">Stats</button><button class="tb" id="bPractice" type="button">Practice</button></nav>
   </div>
 </header>
@@ -87,7 +87,7 @@ const W=[
 ["jumbo","Named after a famous circus elephant.","giant","Much larger than the usual size."]
 ];
 const H=[
-{k:"root",name:"Root meaning",desc:"What its root words meant",cost:5,e:"\u{1F331}"},
+{k:"root",name:"Root meaning",desc:"What its root words meant",cost:0,e:"\u{1F331}"},
 {k:"len",name:"Letter count",desc:"How many letters it has",cost:10,e:"\u{1F522}"},
 {k:"first",name:"First letter",desc:"The letter it starts with",cost:15,e:"\u{1F524}"},
 {k:"sim",name:"Similar word",desc:"A word with a close meaning",cost:20,e:"\u{1F501}"},
@@ -101,11 +101,14 @@ const dayNum=()=>{const d=new Date(),a=new Date(d.getFullYear(),d.getMonth(),d.g
 const idxFor=n=>(n-1)%W.length;
 const blankStats={played:0,won:0,streak:0,best:0,total:0,last:0};
 let S=null,dict=null,msg="",tone="",giveArm=false;
-const fresh=(mode,num,idx)=>({mode,num,idx,pts:100,hints:[],wrong:[],log:[],done:false,won:false,gave:false,rec:false});
+const FREE=H.filter(h=>!h.cost).map(h=>h.k);
+const withFree=s=>{FREE.forEach(k=>{if(!s.hints.includes(k))s.hints.unshift(k)});return s};
+const paidHints=()=>S.hints.filter(k=>H.find(h=>h.k===k).cost>0).length;
+const fresh=(mode,num,idx)=>({mode,num,idx,pts:100,hints:FREE.slice(),wrong:[],log:[],done:false,won:false,gave:false,rec:false});
 const word=()=>W[S.idx];
 const value=k=>{const [a,root,sim,def]=word();return k==="root"?root:k==="len"?`${a.length} letters`:k==="first"?a[0].toUpperCase():k==="sim"?sim:def};
 const score=()=>S.done&&!S.won?0:S.pts;
-function loadToday(){const n=dayNum(),saved=store.get("gist:day:"+n,null);S=saved&&saved.idx===idxFor(n)?saved:fresh("daily",n,idxFor(n));msg=""}
+function loadToday(){const n=dayNum(),saved=store.get("gist:day:"+n,null);S=withFree(saved&&saved.idx===idxFor(n)?saved:fresh("daily",n,idxFor(n)));msg=""}
 function startPractice(){const t=idxFor(dayNum());let i=t;while(i===t&&W.length>1)i=Math.floor(Math.random()*W.length);S=fresh("practice",0,i);msg="";render();$("#g").focus()}
 function persist(){if(S.mode==="daily")store.set("gist:day:"+S.num,S)}
 function say(t,c){msg=t;tone=c||"";const m=$("#msg");m.textContent=t;m.className="msg"+(tone?" "+tone:"")}
@@ -151,14 +154,14 @@ function renderCards(){
   $("#cards").innerHTML=H.map(h=>{
     const open=S.hints.includes(h.k),shown=open||S.done;
     const cls=open?" open":S.done?" unused":"";
-    const cost=open?`−${h.cost} spent`:S.done?"Not used":`${h.cost} pts`;
+    const cost=!h.cost?"Free":open?`−${h.cost} spent`:S.done?"Not used":`${h.cost} pts`;
     return `<button class="card${cls}" type="button" data-k="${h.k}"${shown?' aria-disabled="true"':""} aria-label="${esc(h.name)}${shown?": "+esc(value(h.k)):", costs "+h.cost+" points"}"><span class="cname">${esc(h.name)}</span><span class="cost">${cost}</span>${shown?`<span class="cval">${esc(value(h.k))}</span>`:`<span class="cdesc">${esc(h.desc)}</span>`}</button>`;
   }).join("");
 }
 function renderTries(){
   $("#tlist").innerHTML=S.wrong.map(w=>`<li><s>${esc(w)}</s><span>−5</span></li>`).join("");
   $("#tempty").hidden=S.wrong.length>0||S.done;
-  $("#tempty").textContent="None yet. Your first guess is a shot in the dark, or buy a hint first.";
+  $("#tempty").textContent="None yet. Start from the root meaning, or buy another hint first.";
 }
 function renderPlay(){
   $("#play").hidden=S.done;
@@ -166,7 +169,7 @@ function renderPlay(){
   const r=$("#result");r.hidden=!S.done;
   if(!S.done){r.innerHTML="";const m=$("#msg");m.textContent=msg;m.className="msg"+(msg&&tone?" "+tone:"");return}
   const ans=word()[0],lab=S.won?"Solved":S.gave?"You gave up":"Out of points";
-  const line=S.won?`You kept <b>${S.pts}</b> of 100 points with ${S.hints.length} hint${S.hints.length===1?"":"s"} and ${S.wrong.length} wrong guess${S.wrong.length===1?"":"es"}.`:"Score: 0. Every hint is open on the board so you can see how close you were.";
+  const line=S.won?`You kept <b>${S.pts}</b> of 100 points with ${paidHints()} paid hint${paidHints()===1?"":"s"} and ${S.wrong.length} wrong guess${S.wrong.length===1?"":"es"}.`:"Score: 0. Every hint is open on the board so you can see how close you were.";
   r.innerHTML=`<p class="rlab">${lab}</p><p class="rword">${esc(ans)}</p><p>${line}</p>
   <div class="btns"><button class="btn" id="share" type="button">Copy result</button><button class="btn ghost" id="more" type="button">${S.mode==="daily"?"Play a practice word":"Another practice word"}</button></div>
   ${S.mode==="daily"?`<p class="next">Next word in <b id="cd"></b></p>`:`<button class="giveup" id="backToday" type="button">Back to today's word</button>`}
@@ -174,7 +177,7 @@ function renderPlay(){
   tick();
 }
 function render(){renderHead();renderScore();renderCards();renderTries();renderPlay()}
-const shareText=()=>`Gist ${S.mode==="daily"?"#"+S.num:"practice"} · ${score()}/100\n${S.log.join("")}${S.won||S.gave?"":"⬛"}`;
+const shareText=()=>`Root${S.mode==="daily"?"#"+S.num:"practice"} · ${score()}/100\n${S.log.join("")}${S.won||S.gave?"":"⬛"}`;
 async function copyShare(){
   const txt=shareText(),btn=$("#share");
   try{await navigator.clipboard.writeText(txt);btn.textContent="Copied"}
@@ -189,8 +192,9 @@ function tick(){
 const HELP=`<h2 id="mt">How to play</h2>
 <p>Guess today's word. You start with 100 points and keep whatever is left when you solve it.</p>
 <ul><li>Guess any word, any time. A wrong guess costs 5 points. Typos and made-up words are free.</li>
-<li>Buy hints whenever you like, even before your first guess. Stronger hints cost more:</li></ul>
-<table class="ptable"><tbody>${H.map(h=>`<tr><td>${h.name}</td><td>${h.cost} pts</td></tr>`).join("")}</tbody></table>
+<li>The root meaning is free and shown from the start.</li>
+<li>Buy more hints whenever you like, even before your first guess. Stronger hints cost more:</li></ul>
+<table class="ptable"><tbody>${H.map(h=>`<tr><td>${h.name}</td><td>${h.cost?h.cost+" pts":"Free"}</td></tr>`).join("")}</tbody></table>
 <ul><li>Hit 0 points and the word is revealed. A new word arrives every midnight.</li></ul>
 <p class="small">Guesses are checked against the SCOWL word list, copyright Kevin Atkinson and contributors, used under its free license.</p>
 <button class="btn" id="mgo" type="button">Play today's word</button>`;
@@ -225,7 +229,7 @@ function loadWords(){
   fetch("words.csv").then(r=>r.ok?r.text():Promise.reject(r.status)).then(t=>{const s=new Set(t.split("\n").slice(1).map(x=>x.trim()).filter(Boolean));W.forEach(w=>s.add(w[0]));if(s.size>1000)dict=s}).catch(()=>{dict=null});
 }
 function start(d){
-  if(d&&d.S&&W[d.S.idx]){S=d.S}else loadToday();
+  if(d&&d.S&&W[d.S.idx]){S=withFree(d.S)}else loadToday();
   $("#note").textContent=`Prototype: ${W.length} hand-written words rotate daily. Progress saves in this browser.`;
   bind();loadWords();render();
   if(!store.get("gist:seen",false)){store.set("gist:seen",true);openModal("help")}
